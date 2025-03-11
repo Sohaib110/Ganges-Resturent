@@ -228,13 +228,11 @@ function askForEmail(providedName) {
 async function checkExistingReward(providedEmail) {
   sessionStorage.setItem("userEmail", providedEmail);
 
-  // Check local storage
-  let claimed = localStorage.getItem("userReward");
+  let projectName = "ganges"; // Unique project name
+  let claimed = localStorage.getItem(projectName + "_userReward");
+
   if (claimed) {
-    addMessage(
-      "It looks like you've already claimed a reward previously!",
-      "bot"
-    );
+    addMessage("It looks like you've already claimed a reward previously!", "bot");
     addMessage("Your reward was: " + claimed, "bot");
     addMessage("Thank you for visiting again!", "bot");
     return;
@@ -247,12 +245,12 @@ async function checkExistingReward(providedEmail) {
     );
     let result = await response.json();
     if (result.success && result.hasReward) {
-      addMessage(
-        "It looks like you've already claimed a reward previously!",
-        "bot"
-      );
+      addMessage("It looks like you've already claimed a reward previously!", "bot");
       addMessage("Your reward was: " + result.reward, "bot");
       addMessage("Thank you for visiting again!", "bot");
+      
+      // Store reward in local storage with unique key
+      localStorage.setItem(projectName + "_userReward", result.reward);
       return;
     }
   } catch (error) {
@@ -262,6 +260,7 @@ async function checkExistingReward(providedEmail) {
   // Otherwise, move on to the review step
   askReviewPlatform();
 }
+
 
 /**
  * Ask user which platform they'd like to leave the review on
