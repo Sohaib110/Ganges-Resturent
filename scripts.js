@@ -243,28 +243,39 @@ async function checkExistingReward(providedEmail) {
   sessionStorage.setItem("userEmail", providedEmail);
 
   let projectName = "ganges"; // Unique project name
-  let claimed = localStorage.getItem(projectName + "_userReward");
+  let normalizedEmail = providedEmail.trim().toLowerCase(); // Normalize email
+  let currentTime = Date.now(); // Get current time in milliseconds
+  let thirtyDays = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
-  if (claimed) {
-    addMessage("It looks like you've already claimed a reward previously!", "bot");
-    addMessage("Your reward was: " + claimed, "bot");
-    addMessage("Thank you for visiting again!", "bot");
-    return;
+  let claimedData = JSON.parse(localStorage.getItem(projectName + "_claimedData")) || {};
+
+  if (claimedData[normalizedEmail]) {
+    let lastClaimTime = claimedData[normalizedEmail];
+
+    if (currentTime - lastClaimTime < thirtyDays) {
+      let remainingDays = Math.ceil((thirtyDays - (currentTime - lastClaimTime)) / (1000 * 60 * 60 * 24));
+      addMessage("It looks like you've already claimed a reward previously!", "bot");
+      addMessage(`You can claim again in ${remainingDays} days.`, "bot");
+      return;
+    }
   }
 
   // Check with Google Sheet
   try {
     let response = await fetch(
-      "https://script.google.com/macros/s/AKfycbzH5IBry-2_D5TAAAQgm9KMbDxv5w_41dhttrRiv7uuiP6jzG42s7mCs0UjzEZRnTiP/exec?email=" + providedEmail
+      `https://script.google.com/macros/s/AKfycbzH5IBry-2_D5TAAAQgm9KMbDxv5w_41dhttrRiv7uuiP6jzG42s7mCs0UjzEZRnTiP/exec?email=${normalizedEmail}`
     );
     let result = await response.json();
+
     if (result.success && result.hasReward) {
       addMessage("It looks like you've already claimed a reward previously!", "bot");
       addMessage("Your reward was: " + result.reward, "bot");
       addMessage("Thank you for visiting again!", "bot");
-      
-      // Store reward in local storage with unique key
-      localStorage.setItem(projectName + "_userReward", result.reward);
+
+      // Store reward and timestamp in local storage
+      claimedData[normalizedEmail] = currentTime;
+      localStorage.setItem(projectName + "_claimedData", JSON.stringify(claimedData));
+
       return;
     }
   } catch (error) {
@@ -274,6 +285,7 @@ async function checkExistingReward(providedEmail) {
   // Otherwise, move on to the review step
   askReviewPlatform();
 }
+
 
 
 /**
