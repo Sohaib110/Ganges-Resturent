@@ -120,12 +120,11 @@ function enableUserInput(nextStep, type = "text") {
   };
 }
 
-// Function to validate email format
+// Email validation function
 function validateEmail(email) {
   let emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailPattern.test(email);
 }
-
 
 /**
  * Renders a single message bubble (bot or user)
@@ -239,10 +238,10 @@ function askForEmail(providedName) {
  * Once we have name & email, check if user already claimed a reward
  * If yes, skip the review flow. If no, proceed to ask "Google or Facebook".
  */
-async function checkExistingReward(providedEmail) {
+function checkExistingReward(providedEmail) {
   sessionStorage.setItem("userEmail", providedEmail);
 
-  let projectName = "ganges"; // Unique project name
+  let projectName = "greenChilli"; // Use your actual project name
   let claimed = localStorage.getItem(projectName + "_userReward");
 
   if (claimed) {
@@ -252,27 +251,14 @@ async function checkExistingReward(providedEmail) {
     return;
   }
 
-  // Check with Google Sheet
-  try {
-    let response = await fetch(
-      "https://script.google.com/macros/s/AKfycbzH5IBry-2_D5TAAAQgm9KMbDxv5w_41dhttrRiv7uuiP6jzG42s7mCs0UjzEZRnTiP/exec?email=" + providedEmail
-    );
-    let result = await response.json();
-    if (result.success && result.hasReward) {
-      addMessage("It looks like you've already claimed a reward previously!", "bot");
-      addMessage("Your reward was: " + result.reward, "bot");
-      addMessage("Thank you for visiting again!", "bot");
-      
-      // Store reward in local storage with unique key
-      localStorage.setItem(projectName + "_userReward", result.reward);
-      return;
-    }
-  } catch (error) {
-    console.error("Error checking reward:", error);
-  }
-
   // Otherwise, move on to the review step
   askReviewPlatform();
+}
+
+// Function to store the reward (Ensure you're saving it correctly)
+function storeReward(reward) {
+  let projectName = "greenChilli"; // Ensure this matches checkExistingReward
+  localStorage.setItem(projectName + "_userReward", reward);
 }
 
 
@@ -299,11 +285,13 @@ function handleReviewPlatform(platform) {
 
   if (platform === "google") {
     window.open(
-      "https://www.google.com/search?si=APYL9btvhO6SAb8jF9HqTZMMa7vs_teLnZaEVrJZwRKFIIKjoXmfRtzZB9Vh6wKjn9TwUsNLrYAqH4RraQUicy5UdGefy5jd3Gys4WE-FDpoP2pJt2yLo6ldWVJ_MFHhIOM4T8t1cKstCORg8_JCCYp6FE3uiW6Ryw%3D%3D&hl=en-GB&q=the+ganges+indian+restaurant+reviews&shndl=30&shem=lcuae&source=sh/x/loc/osrp/m5/2&kgs=74e72b6bdf1b6e20", "_blank"
+      "https://www.google.com/search?q=green+chilli+bangor+reviews",
+      "_blank"
     );
   } else if (platform === "facebook") {
     window.open(
-      "https://www.facebook.com/thegangesindian/reviews", "_blank"
+      "https://www.facebook.com/greenchillibangor/reviews/",
+      "_blank"
     );
   }
 
@@ -449,7 +437,7 @@ function giveReward(wheelContainer, wheel) {
 
       try {
         const response = await fetch(
-          "https://script.google.com/macros/s/AKfycbzH5IBry-2_D5TAAAQgm9KMbDxv5w_41dhttrRiv7uuiP6jzG42s7mCs0UjzEZRnTiP/exec ",
+          "https://script.google.com/macros/s/AKfycbxKofbIdXOheq4c5VoCfLctxfl2BTHKQJPedYT7-4LtMrUGCkk5AHMZwfcm0vkzTqvo/exec ",
           { method: "POST", body: formData }
         );
 
