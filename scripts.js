@@ -11,8 +11,8 @@ document.addEventListener("DOMContentLoaded", function () {
     startButton.addEventListener("click", startChat);
   }
 
-  // If there's a saved chat state in sessionStorage, restore it
-  if (sessionStorage.getItem("chatState")) {
+  // If there's a saved chat state in localStorage, restore it
+  if (localStorage.getItem("chatState")) {
     restoreChat();
   }
 });
@@ -21,18 +21,18 @@ let chatStarted = false;
 let chatHistory = [];
 
 /**
- * Saves the current chat state to sessionStorage so
+ * Saves the current chat state to localStorage so
  * refreshing won't lose our conversation.
  */
 function saveChatState() {
-  sessionStorage.setItem("chatState", JSON.stringify(chatHistory));
+  localStorage.setItem("chatState", JSON.stringify(chatHistory));
 }
 
 /**
- * Restores chat state from sessionStorage, if it exists
+ * Restores chat state from localStorage, if it exists
  */
 function restoreChat() {
-  let savedChat = sessionStorage.getItem("chatState");
+  let savedChat = localStorage.getItem("chatState");
   if (savedChat) {
     chatHistory = JSON.parse(savedChat);
     chatHistory.forEach((entry) => {
@@ -126,21 +126,27 @@ function validateEmail(email) {
   return emailPattern.test(email);
 }
 async function checkExistingReward(providedEmail) {
-  sessionStorage.setItem("userEmail", providedEmail);
+  localStorage.setItem("userEmail", providedEmail);
 
   let projectName = "ganges"; // Unique project name
   let normalizedEmail = providedEmail.trim().toLowerCase(); // Normalize email
   let currentTime = Date.now(); // Get current time in milliseconds
   let thirtyDays = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
-  let claimedData = JSON.parse(localStorage.getItem(projectName + "_claimedData")) || {};
+  let claimedData =
+    JSON.parse(localStorage.getItem(projectName + "_claimedData")) || {};
 
   if (claimedData[normalizedEmail]) {
     let lastClaimTime = claimedData[normalizedEmail];
 
     if (currentTime - lastClaimTime < thirtyDays) {
-      let remainingDays = Math.ceil((thirtyDays - (currentTime - lastClaimTime)) / (1000 * 60 * 60 * 24));
-      addMessage("It looks like you've already claimed a reward previously!", "bot");
+      let remainingDays = Math.ceil(
+        (thirtyDays - (currentTime - lastClaimTime)) / (1000 * 60 * 60 * 24)
+      );
+      addMessage(
+        "It looks like you've already claimed a reward previously!",
+        "bot"
+      );
       addMessage(`You can claim again in ${remainingDays} days.`, "bot");
       return;
     }
@@ -154,13 +160,19 @@ async function checkExistingReward(providedEmail) {
     let result = await response.json();
 
     if (result.success && result.hasReward) {
-      addMessage("It looks like you've already claimed a reward previously!", "bot");
+      addMessage(
+        "It looks like you've already claimed a reward previously!",
+        "bot"
+      );
       addMessage("Your reward was: " + result.reward, "bot");
       addMessage("Thank you for visiting again!", "bot");
 
       // Store reward and timestamp in local storage
       claimedData[normalizedEmail] = currentTime;
-      localStorage.setItem(projectName + "_claimedData", JSON.stringify(claimedData));
+      localStorage.setItem(
+        projectName + "_claimedData",
+        JSON.stringify(claimedData)
+      );
 
       return;
     }
@@ -171,7 +183,34 @@ async function checkExistingReward(providedEmail) {
   // Otherwise, move on to the review step
   askReviewPlatform();
 }
+function claimReward() {
+  let projectName = "bengal";
+  let normalizedEmail = localStorage.getItem("userEmail").trim().toLowerCase();
+  let currentTime = Date.now();
 
+  // Get existing data or create empty object
+  let claimedData = {};
+  try {
+    claimedData = JSON.parse(
+      localStorage.getItem(projectName + "_claimedData") || "{}"
+    );
+  } catch (e) {
+    console.error("Error parsing claim data:", e);
+    claimedData = {};
+  }
+
+  // Update claim time with current timestamp
+  claimedData[normalizedEmail] = currentTime;
+
+  // Save back to localStorage
+  localStorage.setItem(
+    projectName + "_claimedData",
+    JSON.stringify(claimedData)
+  );
+
+  // Continue with reward process
+  addMessage("🎉 Congratulations! You've claimed your reward!", "bot");
+}
 
 /**
  * Renders a single message bubble (bot or user)
@@ -272,7 +311,7 @@ function goBack() {
  * After capturing user's name, we ask for the email
  */
 function askForEmail(providedName) {
-  sessionStorage.setItem("userName", providedName);
+  localStorage.setItem("userName", providedName);
   askQuestion(
     "Please enter your Email Address:",
     [],
@@ -285,54 +324,59 @@ function askForEmail(providedName) {
  * Once we have name & email, check if user already claimed a reward
  * If yes, skip the review flow. If no, proceed to ask "Google or Facebook".
  */
-async function checkExistingReward(providedEmail) {
-  sessionStorage.setItem("userEmail", providedEmail);
+function checkExistingReward(providedEmail) {
+  let projectName = "bengal";
+  let normalizedEmail = providedEmail.trim().toLowerCase();
 
-  let projectName = "ganges"; // Unique project name
-  let normalizedEmail = providedEmail.trim().toLowerCase(); // Normalize email
-  let currentTime = Date.now(); // Get current time in milliseconds
-  let thirtyDays = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+  // Store the email in localStorage for later use
+  localStorage.setItem("userEmail", normalizedEmail);
 
-  let claimedData = JSON.parse(localStorage.getItem(projectName + "_claimedData")) || {};
+  // Clear corrupted data if exists
+  if (typeof localStorage.getItem(projectName + "_claimedData") === "object") {
+    localStorage.removeItem(projectName + "_claimedData");
+  }
 
+  // Safe JSON parsing
+  let claimedData = {};
+  try {
+    claimedData = JSON.parse(
+      localStorage.getItem(projectName + "_claimedData") || "{}"
+    );
+  } catch (e) {
+    console.error("Error parsing claim data:", e);
+    localStorage.removeItem(projectName + "_claimedData");
+    claimedData = {};
+  }
+
+  // Check if this email has claimed a reward within the last 30 days
   if (claimedData[normalizedEmail]) {
     let lastClaimTime = claimedData[normalizedEmail];
+    let currentTime = Date.now();
+    let thirtyDays = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
     if (currentTime - lastClaimTime < thirtyDays) {
-      let remainingDays = Math.ceil((thirtyDays - (currentTime - lastClaimTime)) / (1000 * 60 * 60 * 24));
-      addMessage("It looks like you've already claimed a reward previously!", "bot");
-      addMessage(`You can claim again in ${remainingDays} days.`, "bot");
-      return;
+      // Calculate remaining days
+      let remainingDays = Math.ceil(
+        (thirtyDays - (currentTime - lastClaimTime)) / (1000 * 60 * 60 * 24)
+      );
+
+      // Show message about waiting and stop the flow
+      addMessage(
+        `⏳ You have already claimed a reward. Please try again in ${remainingDays} days.`,
+        "bot"
+      );
+
+      // Hide input elements
+      document.getElementById("user-input").style.display = "none";
+      document.getElementById("send-button").style.display = "none";
+
+      return; // Stop the flow here
     }
   }
 
-  // Check with Google Sheet
-  try {
-    let response = await fetch(
-      `https://script.google.com/macros/s/AKfycbzH5IBry-2_D5TAAAQgm9KMbDxv5w_41dhttrRiv7uuiP6jzG42s7mCs0UjzEZRnTiP/exec?email=${normalizedEmail}`
-    );
-    let result = await response.json();
-
-    if (result.success && result.hasReward) {
-      addMessage("It looks like you've already claimed a reward previously!", "bot");
-      addMessage("Your reward was: " + result.reward, "bot");
-      addMessage("Thank you for visiting again!", "bot");
-
-      // Store reward and timestamp in local storage
-      claimedData[normalizedEmail] = currentTime;
-      localStorage.setItem(projectName + "_claimedData", JSON.stringify(claimedData));
-
-      return;
-    }
-  } catch (error) {
-    console.error("Error checking reward:", error);
-  }
-
-  // Otherwise, move on to the review step
+  // If valid (either never claimed or claimed more than 30 days ago), proceed to review platform selection
   askReviewPlatform();
 }
-
-
 
 /**
  * Ask user which platform they'd like to leave the review on
@@ -352,17 +396,16 @@ function askReviewPlatform() {
  * Open the chosen platform in a new tab, then prompt user to upload screenshot
  */
 function handleReviewPlatform(platform) {
-  sessionStorage.setItem("reviewPlatform", platform);
+  localStorage.setItem("reviewPlatform", platform);
   saveChatState();
 
   if (platform === "google") {
     window.open(
-      "https://www.google.com/search?si=APYL9btvhO6SAb8jF9HqTZMMa7vs_teLnZaEVrJZwRKFIIKjoXmfRtzZB9Vh6wKjn9TwUsNLrYAqH4RraQUicy5UdGefy5jd3Gys4WE-FDpoP2pJt2yLo6ldWVJ_MFHhIOM4T8t1cKstCORg8_JCCYp6FE3uiW6Ryw%3D%3D&hl=en-GB&q=the+ganges+indian+restaurant+reviews&shndl=30&shem=lcuae&source=sh/x/loc/osrp/m5/2&kgs=74e72b6bdf1b6e20", "_blank"
+      "https://www.google.com/search?si=APYL9btvhO6SAb8jF9HqTZMMa7vs_teLnZaEVrJZwRKFIIKjoXmfRtzZB9Vh6wKjn9TwUsNLrYAqH4RraQUicy5UdGefy5jd3Gys4WE-FDpoP2pJt2yLo6ldWVJ_MFHhIOM4T8t1cKstCORg8_JCCYp6FE3uiW6Ryw%3D%3D&hl=en-GB&q=the+ganges+indian+restaurant+reviews&shndl=30&shem=lcuae&source=sh/x/loc/osrp/m5/2&kgs=74e72b6bdf1b6e20",
+      "_blank"
     );
   } else if (platform === "facebook") {
-    window.open(
-      "https://www.facebook.com/thegangesindian/reviews", "_blank"
-    );
+    window.open("https://www.facebook.com/thegangesindian/reviews", "_blank");
   }
 
   // Wait a few seconds, then ask user to upload screenshot
@@ -520,7 +563,7 @@ function giveReward(wheelContainer, wheel) {
       }
     };
   }
-
+  claimReward(email);
   // Done updating the chat
   saveChatState();
 }
