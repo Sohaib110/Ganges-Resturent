@@ -144,7 +144,7 @@ async function checkExistingReward(providedEmail) {
         (thirtyDays - (currentTime - lastClaimTime)) / (1000 * 60 * 60 * 24)
       );
       addMessage(
-        "It looks like you've already claimed a reward previously!",
+        "You have already claimed a reward. Please check your previous email from us to see when you're eligible to play again",
         "bot"
       );
       addMessage(`You can claim again in ${remainingDays} days.`, "bot");
