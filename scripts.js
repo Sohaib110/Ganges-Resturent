@@ -209,7 +209,7 @@ function claimReward() {
   );
 
   // Continue with reward process
-  addMessage("🎉 Congratulations! You've claimed your reward!", "bot");
+  addMessage("🎉 Congratulations! Remember to check your  email/spam within the next 12 hours.", "bot");
 }
 
 /**
@@ -512,7 +512,7 @@ function giveReward(wheelContainer, wheel) {
   wheel.style.animation = "none";
 
   // Randomly pick a reward
-  let rewards = ["Chips", "Naan Bread", "Onion Bhaji", "Chicken Pakora"];
+  let rewards = ["Chips\n 10% off your next order", "Naan Bread\n 10% off your next order", "Onion Bhaji\n 10% off your next order", "Chicken Pakora\n 10% off your next order"];
   let chosenReward = rewards[Math.floor(Math.random() * rewards.length)];
   reward = chosenReward;
 
